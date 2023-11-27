@@ -28,7 +28,7 @@ window.onload = function init() {
     document.getElementById("xButton").onclick = function() { axis = xAxis; flag = !flag; };
     document.getElementById("yButton").onclick = function() { axis = yAxis; flag = !flag; };
     document.getElementById("zButton").onclick = function() { axis = zAxis; flag = !flag; };
-    document.getElementById("ButtonT").onclick = function(){flag = !flag;};
+    document.getElementById("ButtonT").onclick = function() {flag = !flag;};
 
     render();
 };
@@ -36,7 +36,7 @@ window.onload = function init() {
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    if(flag ) theta[axis] += 2.0;
+    if(flag) theta[axis] += 2.0;
     gl.uniform3fv(thetaLoc, theta);
 
     rubiksCube.render(theta);
@@ -47,7 +47,7 @@ class RubiksCube {
     constructor(gl, program) {
         this.gl = gl;
         this.program = program;
-        this.cubes = [];
+        this.cubes = [ ];
         this.initCubes();
     }
 
@@ -60,6 +60,105 @@ class RubiksCube {
                 }
             }
         }
+    }
+
+    updateCubePositionsAfterRotation(needToBeRotated1, needToBeRotated2, rotationFlag){
+        if(!rotationFlag){
+            needToBeRotated1.reverse();
+            needToBeRotated2.reverse();
+        }
+        var tempCube1 = needToBeRotated1[3]
+        var tempCube2 = needToBeRotated2[3]
+        for(var i=3; i>=1; i--){
+            this.cubes[needToBeRotated1[i]] = this.cubes[needToBeRotated1[i-1]]
+            this.cubes[needToBeRotated2[i]] = this.cubes[needToBeRotated2[i-1]]
+        }
+        this.cubes[needToBeRotated1[0]] = tempCube1;
+        this.cubes[needToBeRotated2[0]] = tempCube2;
+    }
+
+    rightRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [19, 21, 25, 23]   //for 2 colored cubes
+        cornersArray = [18, 24, 28, 20] //for 3 colored cubes (corners)
+        center = 22                     //need to rotate texture
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    leftRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [3, 1, 5, 7]
+        cornersArray = [6, 0, 2, 8]
+        center = 4
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    upRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [15, 7, 17, 25]
+        cornersArray = [24, 6, 8, 28]
+        center = 16
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    downRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [1, 9, 19, 11]
+        cornersArray = [0, 18, 20, 2]
+        center = 10
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    frontRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [21, 9, 3, 15]
+        cornersArray = [24, 18, 0, 6]
+        center = 12
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    backRotation(isClockwise){
+        //Select all cubes need to be rotated
+        edgesArray = [17, 5, 11, 23]
+        cornersArray = [28, 8, 2, 20]
+        center = 14
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
     render(theta) {
@@ -81,6 +180,7 @@ class Cube {
         this.x = x * 1.2;  // Slightly increased offset for gaps
         this.y = y * 1.2;
         this.z = z * 1.2;
+        //! i think we need to store all chips (points with their colors)
         this.initBuffers();
     }
 
@@ -114,6 +214,7 @@ class Cube {
             var indices = [a, b, c, a, c, d];
             for (let i = 0; i < indices.length; i++) {
                 points.push(this.vertices[indices[i]]);
+                // this works because every side will have the same color in all 27 cubes
                 colors.push(vertexColors[a]);
             }
         };
@@ -121,9 +222,9 @@ class Cube {
         quad(1, 0, 3, 2);
         quad(2, 3, 7, 6);
         quad(3, 0, 4, 7);
-        quad(6, 5, 1, 2);
         quad(4, 5, 6, 7);
         quad(5, 4, 0, 1);
+        quad(6, 5, 1, 2);
 
         var cBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, cBuffer);
@@ -149,4 +250,3 @@ class Cube {
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 36);
     }
 }
-
