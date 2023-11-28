@@ -25,9 +25,9 @@ window.onload = function init() {
 
     thetaLoc = gl.getUniformLocation(program, "theta");
 
-    document.getElementById("xButton").onclick = function() { axis = xAxis; flag = !flag; };
-    document.getElementById("yButton").onclick = function() { axis = yAxis; flag = !flag; };
-    document.getElementById("zButton").onclick = function() { axis = zAxis; flag = !flag; };
+    document.getElementById("xButton").onclick = function() { axis = xAxis; theta[xAxis] += 2; };
+    document.getElementById("yButton").onclick = function() { axis = yAxis; theta[yAxis] += 2; };
+    document.getElementById("zButton").onclick = function() { axis = zAxis; theta[zAxis] += 2; };
     document.getElementById("ButtonT").onclick = function() {flag = !flag;};
 
     render();
@@ -77,10 +77,10 @@ class RubiksCube {
         this.cubes[needToBeRotated2[0]] = tempCube2;
     }
 
-    rightRotation(isClockwise){
+    rotateRight(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [19, 21, 25, 23]   //for 2 colored cubes
-        cornersArray = [18, 24, 28, 20] //for 3 colored cubes (corners)
+        cornersArray = [18, 24, 26, 20] //for 3 colored cubes (corners)
         center = 22                     //need to rotate texture
 
         //TODO rotate all cubes w.r.t x direction
@@ -91,7 +91,7 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
-    leftRotation(isClockwise){
+    rotateLeft(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [3, 1, 5, 7]
         cornersArray = [6, 0, 2, 8]
@@ -105,7 +105,7 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
-    upRotation(isClockwise){
+    rotateUp(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [15, 7, 17, 25]
         cornersArray = [24, 6, 8, 28]
@@ -119,7 +119,7 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
-    downRotation(isClockwise){
+    rotateDown(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [1, 9, 19, 11]
         cornersArray = [0, 18, 20, 2]
@@ -133,7 +133,7 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
-    frontRotation(isClockwise){
+    rotateFront(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [21, 9, 3, 15]
         cornersArray = [24, 18, 0, 6]
@@ -147,14 +147,14 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
-    backRotation(isClockwise){
+    rotateBack(isClockwise){
         //Select all cubes need to be rotated
         edgesArray = [17, 5, 11, 23]
-        cornersArray = [28, 8, 2, 20]
+        cornersArray = [26, 8, 2, 20]
         center = 14
 
         //TODO rotate all cubes w.r.t x direction
-
+        this.cubes[14].chip =
         //
 
         //fix positions of cubes after rotation
@@ -162,11 +162,12 @@ class RubiksCube {
     }
 
     render(theta) {
+        
         var modelViewMatrix = mat4();
         modelViewMatrix = mult(modelViewMatrix, rotate(theta[xAxis], [1, 0, 0]));
         modelViewMatrix = mult(modelViewMatrix, rotate(theta[yAxis], [0, 1, 0]));
         modelViewMatrix = mult(modelViewMatrix, rotate(theta[zAxis], [0, 0, 1]));
-
+        
         for (let cube of this.cubes) {
             cube.render(modelViewMatrix);
         }
@@ -181,6 +182,7 @@ class Cube {
         this.y = y * 1.2;
         this.z = z * 1.2;
         //! i think we need to store all chips (points with their colors)
+        
         this.initBuffers();
     }
 
