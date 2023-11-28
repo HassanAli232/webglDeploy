@@ -161,6 +161,45 @@ class RubiksCube {
         updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
     }
 
+    rotateMiddleRight(isClockwise){
+        //Select all cubes need to be rotated
+        centersArray = [12, 16, 14, 10]
+        cornersArray = [9, 15, 17, 11]
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    rotateMiddleFront(isClockwise){
+        //Select all cubes need to be rotated
+        centersArray = [4, 16, 22, 10]
+        cornersArray = [1, 7, 25, 19]
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
+    rotateMiddleUp(isClockwise){
+        //Select all cubes need to be rotated
+        centersArray = [12, 4, 14, 22]
+        cornersArray = [3, 5, 23, 21]
+
+        //TODO rotate all cubes w.r.t x direction
+
+        //
+
+        //fix positions of cubes after rotation
+        updateCubePositionsAfterRotation(edgesArray, cornersArray, isClockwise);
+    }
+
     render(theta) {
         
         var modelViewMatrix = mat4();
