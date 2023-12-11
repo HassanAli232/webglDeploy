@@ -59,45 +59,51 @@ window.onload = function init() {
     var key = event.key.toLowerCase();
     switch (key) {
       case "f":
-        console.log("The 'F' or 'f' key was pressed");
-        axis = xAxis;
-        incrementTheta();
+        console.log("roate right " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = RIGHT;
+        }
         break;
-      case "j":
-        console.log("The 'J' or 'j' key was pressed");
-        axis = yAxis;
-        incrementTheta();
+      case "u":
+        console.log("roate up " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = UP;
+        }
         break;
-      case "k":
-        console.log("The 'K' or 'k' key was pressed");
-        axis = zAxis;
-        incrementTheta();
-        break;
-      case "s":
-        flag = !flag;
-        console.log("The 'S' or 's' key was pressed");
+      case "l":
+        console.log("roate left " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = LEFT;
+        }
         break;
       case "r":
-        thetIncrement *= -1;
-        console.log("The 'R' or 'r' key was pressed");
+        console.log("roate right " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = RIGHT;
+        }
+        break;
+      case "d":
+        console.log("roate down " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = DOWN;
+        }
+        break;
+      case "b":
+        console.log("roate back " + direction);
+        if (!isRotateing) {
+          isRotateing = true;
+          rotateFun = BACK;
+        }
         break;
     }
   });
 
   //event listeners for buttons
-
-  document.getElementById("xButton").onclick = function () {
-    axis = xAxis;
-  };
-  document.getElementById("yButton").onclick = function () {
-    axis = yAxis;
-  };
-  document.getElementById("zButton").onclick = function () {
-    axis = zAxis;
-  };
-  document.getElementById("ButtonT").onclick = function () {
-    flag = !flag;
-  };
   document.getElementById("reverse").onclick = function () {
     direction *= -1;
   };
@@ -107,7 +113,6 @@ window.onload = function init() {
     // rubiksCube.rotateUp(-1, [0, 45, 0]);
     rubiksCube = new RubiksCube(gl, program);
   };
-
   document.getElementById("rotateRight").onclick = function () {
     console.log("roate right " + direction);
     if (!isRotateing) {
@@ -143,6 +148,14 @@ window.onload = function init() {
       rotateFun = FRONT;
     }
   };
+  document.getElementById("rotateBack").onclick = function () {
+    console.log("roate back " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = BACK;
+    }
+  };
+
   render();
 };
 
@@ -173,11 +186,15 @@ function render() {
         break;
       case FRONT:
         rubiksCube.rotateFront(direction, thetIncrement, !isRotateing);
+        break;
       case MIDDLE_FRONT:
+        rubiksCube.rotateMiddleFront(direction, thetIncrement, !isRotateing);
         break;
       case MIDDLE_RIGHT:
+        rubiksCube.rotateMiddleRight(direction, thetIncrement, !isRotateing);
         break;
       case MIDDLE_UP:
+        rubiksCube.rotateMiddleUp(direction, thetIncrement, !isRotateing);
         break;
     }
   }
@@ -862,66 +879,80 @@ class RubiksCube {
     this.recompute();
   }
 
-  rotateMiddleRight(isClockwise = 1, theta = [90, 0, 0]) {
+  rotateMiddleRight(isClockwise = 1, theta = 90, changeOrder = true) {
     //Select all cubes need to be rotated
     var centersArray = [12, 15, 13, 10];
     var cornersArray = [9, 14, 16, 11];
 
-    //TODO rotate all cubes w.r.t x direction
+    let thetaLocal = [theta * isClockwise, 0, 0];
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotateCube(theta);
-      this.cubes[cornersArray[i]].rotateCube(theta);
+      this.cubes[centersArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        centersArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
-  rotateMiddleFront(isClockwise = 1, theta = [0, 0, 90]) {
+  rotateMiddleFront(isClockwise = 1, theta = -90, changeOrder = true) {
     //Select all cubes need to be rotated
     var centersArray = [4, 15, 21, 10];
     var cornersArray = [1, 7, 24, 18];
 
-    //TODO rotate all cubes w.r.t x direction
+    let thetaLocal = [0, 0, theta * isClockwise * -1];
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotateCube(theta);
-      this.cubes[cornersArray[i]].rotateCube(theta);
+      this.cubes[centersArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        centersArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
-  rotateMiddleUp(isClockwise = 1, theta = [0, 90, 0]) {
+  rotateMiddleUp(isClockwise = 1, theta = 90, changeOrder = true) {
     //Select all cubes need to be rotated
     var centersArray = [12, 4, 13, 21];
     var cornersArray = [3, 5, 22, 20];
 
     //TODO rotate all cubes w.r.t x direction
 
+    let thetaLocal = [0, theta * isClockwise, 0];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotateCube(theta);
-      this.cubes[cornersArray[i]].rotateCube(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
