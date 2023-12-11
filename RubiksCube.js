@@ -6,15 +6,9 @@ var NumVertices = 36;
 var lastMouseX = 0;
 var lastMouseY = 0;
 var dragging = false;
-var cameraXrot = 0;
-var cameraYrot = 0;
+var cameraXrot = -25;
+var cameraYrot = -15;
 var modelView;
-
-var axis = 0;
-theta = [-6, 72, 0];
-// theta = [0, 0, 0];
-
-// var thetaLoc;
 
 const RIGHT = 0;
 const UP = 1;
@@ -25,6 +19,11 @@ const BACK = 5;
 const MIDDLE_FRONT = 6;
 const MIDDLE_RIGHT = 7;
 const MIDDLE_UP = 8;
+
+const ALLUP = 9;
+const ALLRIGHT = 10;
+const ALLLEFT = 11;
+const ALLDOWN = 12;
 
 var flag = true;
 var heldToRtoate = false;
@@ -80,50 +79,62 @@ window.onload = function init() {
     }
   });
   // event listeners for keyboards
-  document.addEventListener("keypress", function (event) {
+  document.addEventListener("keyup", function (event) {
     var key = event.key.toLowerCase();
+
     switch (key) {
+      case "shift":
+        direction = 1;
+        break;
+    }
+  });
+  document.addEventListener("keydown", function (event) {
+    var key = event.key.toLowerCase();
+
+    switch (key) {
+      case "shift":
+        direction = -1;
+        break;
       case "f":
-        console.log("roate right " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = RIGHT;
-        }
+        console.log("rotate right " + direction);
+        twist(FRONT);
         break;
       case "u":
-        console.log("roate up " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = UP;
-        }
+        console.log("rotate up " + direction);
+        twist(UP);
         break;
       case "l":
-        console.log("roate left " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = LEFT;
-        }
+        console.log("rotate left " + direction);
+        twist(LEFT);
         break;
       case "r":
-        console.log("roate right " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = RIGHT;
-        }
+        console.log("rotate right " + direction);
+        twist(RIGHT);
         break;
       case "d":
-        console.log("roate down " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = DOWN;
-        }
+        console.log("rotate down " + direction);
+        twist(DOWN);
         break;
       case "b":
-        console.log("roate back " + direction);
-        if (!isRotateing) {
-          isRotateing = true;
-          rotateFun = BACK;
-        }
+        console.log("rotate back " + direction);
+        twist(BACK);
+        break;
+      case "arrowup":
+        console.log("arrow up");
+        twist(ALLUP);
+
+        break;
+      case "arrowdown":
+        console.log("arrow down");
+        twist(ALLDOWN);
+        break;
+      case "arrowleft":
+        console.log("arrow left");
+        twist(ALLLEFT);
+        break;
+      case "arrowright":
+        console.log("arrow right");
+        twist(ALLRIGHT);
         break;
     }
   });
@@ -133,56 +144,54 @@ window.onload = function init() {
     direction *= -1;
   };
   document.getElementById("reset").onclick = function () {
-    // rubiksCube.setTheta([0, 0, 0]);
-    // console.log("roate up");
-    // rubiksCube.rotateUp(-1, [0, 45, 0]);
     rubiksCube = new RubiksCube(gl, program);
   };
   document.getElementById("rotateRight").onclick = function () {
     console.log("roate right " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = RIGHT;
-    }
+    twist(RIGHT);
   };
   document.getElementById("rotateUp").onclick = function () {
     console.log("roate up " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = UP;
-    }
+    twist(UP);
   };
   document.getElementById("rotateDown").onclick = function () {
     console.log("roate down " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = DOWN;
-    }
+    twist(DOWN);
   };
   document.getElementById("rotateLeft").onclick = function () {
     console.log("roate left " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = LEFT;
-    }
+    twist(LEFT);
   };
   document.getElementById("rotateFront").onclick = function () {
     console.log("roate front " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = FRONT;
-    }
+    twist(FRONT);
   };
   document.getElementById("rotateBack").onclick = function () {
     console.log("roate back " + direction);
-    if (!isRotateing) {
-      isRotateing = true;
-      rotateFun = BACK;
+    twist(BACK);
+  };
+
+  document.getElementById("browse").onclick = function (event) {
+    var file = event.target.files[0];
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        // Set the loaded image as the background
+        canvas.style.backgroundImage = "url(" + e.target.result + ")";
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   render();
 };
+
+function twist(num) {
+  if (!isRotateing) {
+    isRotateing = true;
+    rotateFun = num;
+  }
+}
 
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -221,6 +230,29 @@ function render() {
       case MIDDLE_UP:
         rubiksCube.rotateMiddleUp(direction, thetIncrement, !isRotateing);
         break;
+      case BACK:
+        rubiksCube.rotateBack(direction, thetIncrement, !isRotateing);
+        break;
+      case ALLUP:
+        rubiksCube.rotateMiddleRight(1, thetIncrement, !isRotateing);
+        rubiksCube.rotateRight(1, thetIncrement, !isRotateing);
+        rubiksCube.rotateLeft(-1, thetIncrement, !isRotateing);
+        break;
+      case ALLRIGHT:
+        rubiksCube.rotateUp(-1, thetIncrement, !isRotateing);
+        rubiksCube.rotateMiddleUp(-1, thetIncrement, !isRotateing);
+        rubiksCube.rotateDown(1, thetIncrement, !isRotateing);
+        break;
+      case ALLLEFT:
+        rubiksCube.rotateUp(1, thetIncrement, !isRotateing);
+        rubiksCube.rotateMiddleUp(1, thetIncrement, !isRotateing);
+        rubiksCube.rotateDown(-1, thetIncrement, !isRotateing);
+        break;
+      case ALLDOWN:
+        rubiksCube.rotateMiddleRight(-1, thetIncrement, !isRotateing);
+        rubiksCube.rotateRight(-1, thetIncrement, !isRotateing);
+        rubiksCube.rotateLeft(1, thetIncrement, !isRotateing);
+        break;
     }
   }
 
@@ -252,15 +284,16 @@ class RubiksCube {
     var blue = [0.0, 0.0, 1.0, 1.0];
     var green = [0.0, 1.0, 0.0, 1.0];
     var yellow = [1.0, 1.0, 0.0, 1.0];
-    // var magenta = [1.0, 0.0, 1.0, 1.0];
-    var orange = [1.0, 0.65, 0.0, 1.0];
+    // var magenta = [0.8, 0.0, 0.7, 1.0];
+    var magenta = [0.0, 1.0, 1.0, 1.0];
+    // var orange = [1.0, 0.65, 0.0, 1.0];
     var white = [1.0, 1.0, 1.0, 1.0];
     var black = [0.0, 0.0, 0.0, 1.0];
 
     this.upColor = white;
     this.rightColor = red;
     this.bottomColor = yellow;
-    this.leftColor = orange;
+    this.leftColor = magenta;
     this.frontColor = green;
     this.backColor = blue;
     this.hidden = black;
@@ -557,7 +590,7 @@ class RubiksCube {
       this.hidden,
       this.hidden,
       this.bottomColor,
-      this.hideen,
+      this.hidden,
       this.frontColor,
       this.hidden
     );
@@ -915,7 +948,6 @@ class RubiksCube {
       this.cubes[centersArray[i]].rotateCube(thetaLocal);
       this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
     if (changeOrder) {
@@ -940,7 +972,6 @@ class RubiksCube {
       this.cubes[centersArray[i]].rotateCube(thetaLocal);
       this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
     if (changeOrder) {
@@ -964,15 +995,14 @@ class RubiksCube {
     let thetaLocal = [0, theta * isClockwise, 0];
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[centersArray[i]].rotateCube(thetaLocal);
       this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
     if (changeOrder) {
       this.updateCubePositionsAfterRotation(
-        edgesArray,
+        centersArray,
         cornersArray,
         isClockwise
       );
