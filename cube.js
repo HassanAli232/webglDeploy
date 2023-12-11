@@ -1,8 +1,9 @@
 class Cube {
-  constructor(gl, program, x, y, z, size) {
+  constructor(gl, program, x, y, z, size, id) {
     this.gl = gl;
     this.program = program;
 
+    this.id = id;
     this.center = [x, y, z];
     this.size = size;
     this.theta = [0, 0, 0]; // in degree.
@@ -43,6 +44,10 @@ class Cube {
     this.generateColorCube();
   }
 
+  getId() {
+    return this.id;
+  }
+
   getInfo() {
     return [this.points, this.colors];
   }
@@ -51,11 +56,7 @@ class Cube {
     return this.center;
   }
 
-  rotate(theta) {
-    // this.theta[0] = (this.theta[0] + theta[0]) % 360;
-    // this.theta[1] = (this.theta[1] + theta[1]) % 360;
-    // this.theta[2] = (this.theta[2] + theta[2]) % 360;
-
+  rotateCube(theta) {
     // Define rotation matrices for each axis
     var rotateX = rotate(theta[0], [1, 0, 0]);
     var rotateY = rotate(theta[1], [0, 1, 0]);
@@ -68,6 +69,22 @@ class Cube {
     for (let i = 0; i < this.points.length; i++) {
       this.points[i] = this.multMat4Vec4(rotateMatrix, this.points[i]);
     }
+  }
+
+  setOffset(offset) {
+    for (let i = 0; i < this.points.length; i++) {
+      let point = this.points[i];
+      // Update each coordinate based on the sign and offset
+      point[0] += offset * this.getSign(point[0]);
+      point[1] += offset * this.getSign(point[1]);
+      point[2] += offset * this.getSign(point[2]);
+
+      this.points[i] = point;
+    }
+  }
+
+  getSign(number) {
+    return number > 0 ? 1 : number < 0 ? -1 : 0;
   }
 
   generateColorCube() {
@@ -88,6 +105,10 @@ class Cube {
       }
     }
     return result;
+  }
+
+  degreeToRadian(degrees) {
+    return (degrees * Math.PI) / 180;
   }
 
   quad(a, b, c, d, color = -1, center = [0, 0, 0], sideSize = 1) {
@@ -127,14 +148,6 @@ class Cube {
         vertices[indices[i]],
         vec4(center[0], center[1], center[2], 0.0)
       );
-
-      // Apply rotation to the adjusted vertex
-      //   var rotatedVertex = mult(
-      //     rotate(this.theta[0], [1, 0, 0]),
-      //     mult(rotate(this.theta[1], [0, 1, 0]), rotate(this.theta[2], [0, 0, 1]))
-      //   );
-
-      //   rotatedVertex = this.multMat4Vec4(rotatedVertex, adjustedVertex);
 
       this.points.push(adjustedVertex);
 

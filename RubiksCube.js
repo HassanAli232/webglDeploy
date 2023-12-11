@@ -13,10 +13,19 @@ var dragging = false;
 
 var axis = 0;
 theta = [-6, 72, 0];
-theta = [0, 0, 0];
-var thetIncrement = 2;
+// theta = [0, 0, 0];
 
-var thetaLoc;
+// var thetaLoc;
+
+const RIGHT = 0;
+const UP = 1;
+const LEFT = 2;
+const DOWN = 3;
+const FRONT = 4;
+const BACK = 5;
+const MIDDLE_FRONT = 6;
+const MIDDLE_RIGHT = 7;
+const MIDDLE_UP = 8;
 
 var flag = true;
 var heldToRtoate = false;
@@ -24,6 +33,12 @@ var cube, rubiksCube;
 var x = 0,
   y = 0,
   z = 0;
+
+var direction = 1;
+var isRotateing = false;
+var thetIncrement = 5;
+var currentRotatingDegree = 0;
+var rotateFun;
 
 window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
@@ -40,7 +55,7 @@ window.onload = function init() {
   rubiksCube = new RubiksCube(gl, program);
 
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.0, 0.0, 0.0, 1.0); // Set background to black
+  gl.clearColor(0.35, 0.35, 0.35, 1.0); // Set background to black
   gl.enable(gl.DEPTH_TEST);
 
   // event listeners for keyboards
@@ -88,31 +103,49 @@ window.onload = function init() {
     flag = !flag;
   };
   document.getElementById("reverse").onclick = function () {
-    thetIncrement *= -1;
+    direction *= -1;
   };
   document.getElementById("reset").onclick = function () {
-    rubiksCube.setTheta([0, 0, 0]);
+    // rubiksCube.setTheta([0, 0, 0]);
+    // console.log("roate up");
+    // rubiksCube.rotateUp(-1, [0, 45, 0]);
+    rubiksCube = new RubiksCube(gl, program);
   };
 
   document.getElementById("rotateRight").onclick = function () {
-    console.log("roate right");
-    rubiksCube.rotateRight();
+    console.log("roate right " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = RIGHT;
+    }
   };
   document.getElementById("rotateUp").onclick = function () {
-    console.log("roate up");
-    rubiksCube.rotateUp();
+    console.log("roate up " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = UP;
+    }
   };
   document.getElementById("rotateDown").onclick = function () {
-    console.log("roate down");
-    rubiksCube.rotateDown();
+    console.log("roate down " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = DOWN;
+    }
   };
   document.getElementById("rotateLeft").onclick = function () {
-    console.log("roate left");
-    rubiksCube.rotateLeft();
+    console.log("roate left " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = LEFT;
+    }
   };
   document.getElementById("rotateFront").onclick = function () {
-    console.log("roate front");
-    rubiksCube.rotateFront();
+    console.log("roate front " + direction);
+    if (!isRotateing) {
+      isRotateing = true;
+      rotateFun = FRONT;
+    }
   };
   render();
 };
@@ -121,6 +154,37 @@ function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   // rubiksCube.setTheta(theta);
+
+  if (isRotateing) {
+    currentRotatingDegree += thetIncrement;
+    if (currentRotatingDegree == 90) {
+      currentRotatingDegree = 0;
+      isRotateing = false;
+    }
+
+    switch (rotateFun) {
+      case RIGHT:
+        rubiksCube.rotateRight(direction, thetIncrement, !isRotateing);
+        break;
+      case UP:
+        rubiksCube.rotateUp(direction, thetIncrement, !isRotateing);
+        break;
+      case LEFT:
+        rubiksCube.rotateLeft(direction, thetIncrement, !isRotateing);
+        break;
+      case DOWN:
+        rubiksCube.rotateDown(direction, thetIncrement, !isRotateing);
+        break;
+      case FRONT:
+        rubiksCube.rotateFront(direction, thetIncrement, !isRotateing);
+      case MIDDLE_FRONT:
+        break;
+      case MIDDLE_RIGHT:
+        break;
+      case MIDDLE_UP:
+        break;
+    }
+  }
 
   rubiksCube.render();
   gl.drawArrays(gl.TRIANGLES, 0, NumVertices);
@@ -144,16 +208,17 @@ class RubiksCube {
     var blue = [0.0, 0.0, 1.0, 1.0];
     var green = [0.0, 1.0, 0.0, 1.0];
     var yellow = [1.0, 1.0, 0.0, 1.0];
-    var magenta = [1.0, 0.0, 1.0, 1.0];
+    // var magenta = [1.0, 0.0, 1.0, 1.0];
+    var orange = [1.0, 0.65, 0.0, 1.0];
     var white = [1.0, 1.0, 1.0, 1.0];
-    var black = [0.0, 1.0, 1.0, 1.0];
+    var black = [0.0, 0.0, 0.0, 1.0];
 
     this.upColor = white;
-    this.rightColor = green;
+    this.rightColor = red;
     this.bottomColor = yellow;
-    this.leftColor = blue;
-    this.frontColor = red;
-    this.backColor = magenta;
+    this.leftColor = orange;
+    this.frontColor = green;
+    this.backColor = blue;
     this.hidden = black;
 
     this.initCubes();
@@ -185,6 +250,7 @@ class RubiksCube {
 
   // This function is used whenever the order of the cubes differ.
   recompute() {
+    // console.log(this.cubes);
     this.rubiksPoints = [];
     this.rubiksColors = [];
     this.addAllCubesInfo();
@@ -194,13 +260,14 @@ class RubiksCube {
   setTheta(theta) {
     // this.theta = theta;
     for (let i = 0; i < 26; i++) {
-      this.cubes[i].rotate(theta);
+      this.cubes[i].rotateCube(theta);
     }
 
     this.recompute();
   }
 
   initCubes() {
+    let counter = 0;
     for (let x = -this.sideSize; x <= this.sideSize; x++) {
       for (let y = -this.sideSize; y <= this.sideSize; y++) {
         for (let z = -this.sideSize; z <= this.sideSize; z++) {
@@ -209,12 +276,14 @@ class RubiksCube {
             new Cube(
               this.gl,
               this.program,
-              x / 3.0,
-              y / 3.0,
-              z / 3.0,
-              1.0 / 3.0
+              x / 3.0 + 0.01 * x,
+              y / 3.0 + 0.01 * y,
+              z / 3.0 + 0.01 * z,
+              1.0 / 3.0,
+              counter
             )
           );
+          counter++;
         }
       }
     }
@@ -489,7 +558,7 @@ class RubiksCube {
     needToBeRotated2,
     rotationFlag
   ) {
-    if (!rotationFlag) {
+    if (rotationFlag == -1) {
       needToBeRotated1.reverse();
       needToBeRotated2.reverse();
     }
@@ -501,31 +570,37 @@ class RubiksCube {
     }
     this.cubes[needToBeRotated1[0]] = tempCube1;
     this.cubes[needToBeRotated2[0]] = tempCube2;
+
+    this.recompute();
   }
 
-  rotateRight(isClockwise = 1, theta = [90, 0, 0]) {
+  rotateRight(isClockwise = 1, theta = 90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [18, 20, 24, 22]; //for 2 colored cubes
     var cornersArray = [17, 23, 25, 19]; //for 3 colored cubes (corners)
     var center = 21; //need to rotate texture
 
+    let thetaLocal = [theta * isClockwise, 0, 0];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
 
     this.recompute();
   }
 
-  rotateUp(isClockwise = 1, theta = [0, 90, 0]) {
+  rotateUp(isClockwise = 1, theta = 90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [14, 7, 16, 24];
     // edgesArray = [7, 14, 24, 16];
@@ -533,25 +608,27 @@ class RubiksCube {
     // cornersArray = [6, 23, 25, 8];
     var center = 15;
 
-    //TODO rotate all cubes w.r.t x direction
+    let thetaLocal = [0, theta * isClockwise, 0];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
-    this.recompute();
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
 
-    console.log(this.cubes);
+    this.recompute();
   }
 
-  rotateDown(isClockwise = 1, theta = [0, 90, 0]) {
+  rotateDown(isClockwise = 1, theta = -90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [1, 9, 18, 11];
     var cornersArray = [0, 17, 19, 2];
@@ -559,22 +636,27 @@ class RubiksCube {
 
     //TODO rotate all cubes w.r.t x direction
 
+    let thetaLocal = [0, theta * isClockwise * -1, 0];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
-  rotateLeft(isClockwise = 1, theta = [90, 0, 0]) {
+  rotateLeft(isClockwise = 1, theta = -90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [3, 1, 5, 7];
     var cornersArray = [6, 0, 2, 8];
@@ -582,23 +664,27 @@ class RubiksCube {
 
     //TODO rotate all cubes w.r.t x direction
 
+    let thetaLocal = [theta * isClockwise * -1, 0, 0];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
-    console.log(this.cubes);
   }
 
-  rotateFront(isClockwise = 1, theta = [0, 0, 90]) {
+  rotateFront(isClockwise = 1, theta = -90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [20, 9, 3, 14];
     var cornersArray = [23, 17, 0, 6];
@@ -606,40 +692,50 @@ class RubiksCube {
 
     //TODO rotate all cubes w.r.t x direction
 
+    let thetaLocal = [0, 0, theta * isClockwise * -1];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
-  rotateBack(isClockwise = 1, theta = [0, 0, 90]) {
+  rotateBack(isClockwise = 1, theta = 90, changeOrder = true) {
     //Select all cubes need to be rotated
     var edgesArray = [16, 5, 11, 22];
     var cornersArray = [25, 8, 2, 19];
     var center = 13;
 
     //TODO rotate all cubes w.r.t x direction
+    let thetaLocal = [0, 0, theta * isClockwise];
+
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(thetaLocal);
+      this.cubes[cornersArray[i]].rotateCube(thetaLocal);
     }
-    this.cubes[center].rotate(theta);
+    this.cubes[center].rotateCube(thetaLocal);
 
     //fix positions of cubes after rotation
-    this.updateCubePositionsAfterRotation(
-      edgesArray,
-      cornersArray,
-      isClockwise
-    );
+    if (changeOrder) {
+      this.updateCubePositionsAfterRotation(
+        edgesArray,
+        cornersArray,
+        isClockwise
+      );
+    }
+
     this.recompute();
   }
 
@@ -651,8 +747,8 @@ class RubiksCube {
     //TODO rotate all cubes w.r.t x direction
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(theta);
+      this.cubes[cornersArray[i]].rotateCube(theta);
     }
 
     //fix positions of cubes after rotation
@@ -672,8 +768,8 @@ class RubiksCube {
     //TODO rotate all cubes w.r.t x direction
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(theta);
+      this.cubes[cornersArray[i]].rotateCube(theta);
     }
 
     //fix positions of cubes after rotation
@@ -693,8 +789,8 @@ class RubiksCube {
     //TODO rotate all cubes w.r.t x direction
 
     for (let i = 0; i < 4; i++) {
-      this.cubes[edgesArray[i]].rotate(theta);
-      this.cubes[cornersArray[i]].rotate(theta);
+      this.cubes[edgesArray[i]].rotateCube(theta);
+      this.cubes[cornersArray[i]].rotateCube(theta);
     }
 
     //fix positions of cubes after rotation
