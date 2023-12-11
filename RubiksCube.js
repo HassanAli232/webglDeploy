@@ -199,9 +199,15 @@ class RubiksCube {
   constructor(gl, program) {
     this.gl = gl;
     this.program = program;
+
     this.cubes = [];
+
     this.rubiksPoints = [];
     this.rubiksColors = [];
+    // For texture and lighting.
+    this.rubiksNormals = [];
+    this.rubiksTexCoordsArray = [];
+
     this.sideSize = 1; // temporarily should be 1 until fix.
 
     var red = [1.0, 0.0, 0.0, 1.0];
@@ -246,6 +252,26 @@ class RubiksCube {
     var vPosition = this.gl.getAttribLocation(this.program, "vPosition");
     this.gl.vertexAttribPointer(vPosition, 4, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(vPosition);
+
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(this.rubiksNormals), gl.STATIC_DRAW);
+
+    var vNormal = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormal);
+
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      flatten(this.rubiksTexCoordsArray),
+      gl.STATIC_DRAW
+    );
+
+    var vTexCoord = gl.getAttribLocation(program, "vTexCoord");
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTexCoord);
   }
 
   // This function is used whenever the order of the cubes differ.
@@ -253,6 +279,9 @@ class RubiksCube {
     // console.log(this.cubes);
     this.rubiksPoints = [];
     this.rubiksColors = [];
+
+    this.rubiksNormals = [];
+    this.rubiksTexCoordsArray = [];
     this.addAllCubesInfo();
     this.initBuffers();
   }
@@ -551,6 +580,9 @@ class RubiksCube {
     // Concatenate the arrays
     this.rubiksPoints = this.rubiksPoints.concat(info[0]);
     this.rubiksColors = this.rubiksColors.concat(info[1]);
+
+    this.rubiksNormals = this.rubiksNormals.concat(info[2]);
+    this.rubiksTexCoordsArray = this.rubiksTexCoordsArray.concat(info[3]);
   }
 
   updateCubePositionsAfterRotation(

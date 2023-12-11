@@ -11,6 +11,12 @@ class Cube {
     this.points = [];
     this.colors = [];
 
+    // For textures.
+    this.normals = [];
+    this.texCoordsArray = [];
+
+    this.texCoord = [vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0)];
+
     var red = [1.0, 0.0, 0.0, 1.0];
     var blue = [0.0, 0.0, 1.0, 1.0];
     var green = [0.0, 1.0, 0.0, 1.0];
@@ -40,6 +46,9 @@ class Cube {
     // Reset the cube.
     this.points = [];
     this.colors = [];
+    // For textures.
+    this.normals = [];
+    this.texCoordsArray = [];
 
     this.generateColorCube();
   }
@@ -49,7 +58,12 @@ class Cube {
   }
 
   getInfo() {
-    return [this.points, this.colors];
+    return [
+      this.points,
+      this.colors, // For textures.
+      this.normals,
+      this.texCoordsArray,
+    ];
   }
 
   getCenter() {
@@ -134,6 +148,11 @@ class Cube {
       [1.0, 1.0, 1.0, 1.0], // white
     ];
 
+    var t1 = subtract(vertices[b], vertices[a]);
+    var t2 = subtract(vertices[c], vertices[b]);
+    var normal = cross(t1, t2);
+    normal = vec3(normal);
+
     // We need to parition the quad into two triangles in order for
     // WebGL to be able to render it.  In this case, we create two
     // triangles from the quad indices
@@ -154,6 +173,14 @@ class Cube {
       // for solid colored faces use
       if (color === -1) this.colors.push(vertexColors[a]);
       else this.colors.push(color);
+
+      this.normals.push(normal);
+
+      if (i < 4) {
+        this.texCoordsArray.push(this.texCoord[i % 3]);
+      } else {
+        this.texCoordsArray.push(this.texCoord[(i % 3) + 1]);
+      }
     }
   }
 }
