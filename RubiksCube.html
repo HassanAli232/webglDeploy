@@ -2,53 +2,68 @@
   <script id="vertex-shader" type="x-shader/x-vertex">
 
     attribute  vec4 vPosition;
-    attribute  vec4 vColor;
-    varying vec4 fColor;
-    uniform vec3 theta;
-    uniform mat4 modelViewMatrix;
+        attribute  vec3 vNormal;
+        attribute  vec4 vColor;
+        attribute vec2 vTexCoord;
+        varying vec4 fColor;
+        varying vec2 fTexCoord;
+        uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        uniform vec4 lightPosition;
+        uniform float shininess;
+        void main() {
+
+            vec3 pos = -(modelViewMatrix * vPosition).xyz;
+
+            //fixed light postion
+
+            vec3 light = lightPosition.xyz;
+            vec3 L = normalize( light - pos );
 
 
-    void main()
-    {
-        // Compute the sines and cosines of theta for each of
-        //   the three axes in one computation.
-        vec3 angles = radians( theta );
-        vec3 c = cos( angles );
-        vec3 s = sin( angles );
-        gl_Position = modelViewMatrix * vPosition;
-        // Remeber: thse matrices are column-major
-        mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
-    		    0.0,  c.x,  s.x, 0.0,
-    		    0.0, -s.x,  c.x, 0.0,
-    		    0.0,  0.0,  0.0, 1.0 );
+            vec3 E = normalize( -pos );
+            vec3 H = normalize( L + E );
 
-        mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
-    		    0.0, 1.0,  0.0, 0.0,
-    		    s.y, 0.0,  c.y, 0.0,
-    		    0.0, 0.0,  0.0, 1.0 );
+            vec4 NN = vec4(vNormal,0);
 
+            // Transform vertex normal into eye coordinates
 
-        mat4 rz = mat4( c.z, -s.z, 0.0, 0.0,
-    		    s.z,  c.z, 0.0, 0.0,
-    		    0.0,  0.0, 1.0, 0.0,
-    		    0.0,  0.0, 0.0, 1.0 );
+            vec3 N = normalize( (modelViewMatrix*NN).xyz);
 
-        fColor = vColor;
-        gl_Position = vPosition;
-    }
+            // Compute terms in the illumination equation
+            vec4 ambient = ambientProduct;
+
+            float Kd = max( dot(L, N), 0.0 );
+            vec4  diffuse = Kd*diffuseProduct;
+
+            float Ks = pow( max(dot(N, H), 0.0), shininess );
+            vec4  specular = Ks * specularProduct;
+
+            if( dot(L, N) < 0.0 ) {
+            specular = vec4(0.0, 0.0, 0.0, 1.0);
+            }
+
+            gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+            fColor = vColor + ambient + diffuse +specular;
+            fTexCoord = vTexCoord;
+            fColor.a = 1.0;
+        }
   </script>
 
   <script id="fragment-shader" type="x-shader/x-fragment">
 
     precision mediump float;
 
-    varying vec4 fColor;
+        varying vec4 fColor;
+        varying vec2 fTexCoord;
 
-    void
-    main()
-    {
-        gl_FragColor = fColor;
-    }
+        uniform sampler2D texture;
+        void
+        main()
+        {
+            gl_FragColor = fColor * texture2D(texture, fTexCoord);
+        }
   </script>
 
   <script type="text/javascript" src="./Common/webgl-utils.js"></script>
@@ -58,10 +73,18 @@
   <script type="text/javascript" src="RubiksCube.js"></script>
 
   <body>
-    <canvas id="gl-canvas" width="512" height="512">
+    <canvas
+      id="gl-canvas"
+      width="512"
+      height="512"
+      style="
+        background: url(./Textures/black-grid.jpg);
+        border: 1px solid #3d3d3d;
+      "
+    >
       Oops ... your browser doesn't support the HTML5 canvas element
     </canvas>
-
+    <img id="texImage" src="./Textures/glass-tex2.png" hidden />
     <br />
 
     <button id="xButton">Rotate X</button>

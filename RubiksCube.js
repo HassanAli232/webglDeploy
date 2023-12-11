@@ -54,10 +54,6 @@ window.onload = function init() {
   // cube = new Cube(gl, program, x, y, z, 1);
   rubiksCube = new RubiksCube(gl, program);
 
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.35, 0.35, 0.35, 1.0); // Set background to black
-  gl.enable(gl.DEPTH_TEST);
-
   // event listeners for keyboards
   document.addEventListener("keypress", function (event) {
     var key = event.key.toLowerCase();
@@ -231,6 +227,10 @@ class RubiksCube {
     this.initBuffers();
   }
   initBuffers() {
+    this.gl.viewport(0, 0, canvas.width, canvas.height);
+    this.gl.clearColor(0.35, 0.35, 0.35, 1.0); // Set background to black
+    this.gl.enable(this.gl.DEPTH_TEST);
+
     var cBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, cBuffer);
     this.gl.bufferData(
@@ -253,25 +253,116 @@ class RubiksCube {
     this.gl.vertexAttribPointer(vPosition, 4, this.gl.FLOAT, false, 0, 0);
     this.gl.enableVertexAttribArray(vPosition);
 
-    var nBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(this.rubiksNormals), gl.STATIC_DRAW);
-
-    var vNormal = gl.getAttribLocation(program, "vNormal");
-    gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vNormal);
-
-    var tBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      flatten(this.rubiksTexCoordsArray),
+    var nBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, nBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      flatten(this.rubiksNormals),
       gl.STATIC_DRAW
     );
 
-    var vTexCoord = gl.getAttribLocation(program, "vTexCoord");
-    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vTexCoord);
+    var vNormal = this.gl.getAttribLocation(this.program, "vNormal");
+    this.gl.vertexAttribPointer(vNormal, 3, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(vNormal);
+
+    var tBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, tBuffer);
+    this.gl.bufferData(
+      this.gl.ARRAY_BUFFER,
+      flatten(this.rubiksTexCoordsArray),
+      this.gl.STATIC_DRAW
+    );
+
+    var vTexCoord = this.gl.getAttribLocation(this.program, "vTexCoord");
+    this.gl.vertexAttribPointer(vTexCoord, 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(vTexCoord);
+
+    var image = document.getElementById("texImage");
+    this.configureTexture(image);
+
+    var viewerPos = vec3(0.0, 0.0, -20.0);
+
+    var projection = ortho(-1, 1, -1, 1, 100, -100);
+
+    var lightPosition = vec4(0.0, 1.0, 0.0, 0.0);
+    var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
+    var lightDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
+    var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
+
+    var materialAmbient = vec4(0.5, 0.5, 0.5, 1.0);
+    var materialDiffuse = vec4(1.0, 0.8, 0.0, 1.0);
+    var materialSpecular = vec4(1.0, 0.8, 0.0, 1.0);
+    var materialShininess = 100.0;
+
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+
+    this.gl.uniform4fv(
+      this.gl.getUniformLocation(this.program, "ambientProduct"),
+      flatten(ambientProduct)
+    );
+    this.gl.uniform4fv(
+      this.gl.getUniformLocation(this.program, "diffuseProduct"),
+      flatten(diffuseProduct)
+    );
+    this.gl.uniform4fv(
+      this.gl.getUniformLocation(this.program, "specularProduct"),
+      flatten(specularProduct)
+    );
+    this.gl.uniform4fv(
+      this.gl.getUniformLocation(this.program, "lightPosition"),
+      flatten(lightPosition)
+    );
+
+    this.gl.uniform1f(
+      this.gl.getUniformLocation(this.program, "shininess"),
+      materialShininess
+    );
+
+    this.gl.uniformMatrix4fv(
+      this.gl.getUniformLocation(this.program, "projectionMatrix"),
+      false,
+      flatten(projection)
+    );
+  }
+
+  configureTexture(image) {
+    var texture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+    this.gl.texImage2D(
+      this.gl.TEXTURE_2D,
+      0,
+      this.gl.RGB,
+      this.gl.RGB,
+      this.gl.UNSIGNED_BYTE,
+      image
+    );
+    if (this.isPowerOf2(image.width) && this.isPowerOf2(image.height)) {
+      this.gl.generateMipmap(this.gl.TEXTURE_2D);
+    } else {
+      this.gl.texParameteri(
+        this.gl.TEXTURE_2D,
+        this.gl.TEXTURE_WRAP_S,
+        this.gl.CLAMP_TO_EDGE
+      );
+      this.gl.texParameteri(
+        this.gl.TEXTURE_2D,
+        this.gl.TEXTURE_WRAP_T,
+        this.gl.CLAMP_TO_EDGE
+      );
+      this.gl.texParameteri(
+        this.gl.TEXTURE_2D,
+        this.gl.TEXTURE_MIN_FILTER,
+        this.gl.LINEAR
+      );
+    }
+    this.gl.uniform1i(this.gl.getUniformLocation(this.program, "texture"), 0);
+  }
+
+  isPowerOf2(value) {
+    return (value & (value - 1)) === 0;
   }
 
   // This function is used whenever the order of the cubes differ.
@@ -835,6 +926,13 @@ class RubiksCube {
   }
 
   render() {
+    var modelView = mat4();
+
+    this.gl.uniformMatrix4fv(
+      this.gl.getUniformLocation(this.program, "modelViewMatrix"),
+      false,
+      flatten(modelView)
+    );
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 36 * this.cubes.length);
   }
 }
