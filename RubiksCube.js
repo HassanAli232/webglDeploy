@@ -3,13 +3,12 @@ var gl;
 
 var NumVertices = 36;
 
-var xAxis = 0;
-var yAxis = 1;
-var zAxis = 2;
-
 var lastMouseX = 0;
 var lastMouseY = 0;
 var dragging = false;
+var cameraXrot = 0;
+var cameraYrot = 0;
+var modelView;
 
 var axis = 0;
 theta = [-6, 72, 0];
@@ -54,6 +53,32 @@ window.onload = function init() {
   // cube = new Cube(gl, program, x, y, z, 1);
   rubiksCube = new RubiksCube(gl, program);
 
+  canvas.addEventListener("mousedown", function (event) {
+    dragging = true;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+  });
+
+  canvas.addEventListener("mouseup", function () {
+    dragging = false;
+  });
+
+  canvas.addEventListener("mousemove", function (event) {
+    if (dragging) {
+      var deltaX = event.clientX - lastMouseX;
+      var deltaY = event.clientY - lastMouseY;
+
+      if (cameraYrot - deltaY / 5 < 25 && cameraYrot - deltaY / 5 > -25) {
+        cameraYrot -= deltaY / 5; // Update x based on vertical mouse movement
+      }
+      if (cameraXrot - deltaX / 5 < 25 && cameraXrot - deltaX / 5 > -25) {
+        cameraXrot -= deltaX / 5; // Update y based on horizontal mouse movement
+      }
+
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+    }
+  });
   // event listeners for keyboards
   document.addEventListener("keypress", function (event) {
     var key = event.key.toLowerCase();
@@ -228,7 +253,7 @@ class RubiksCube {
   }
   initBuffers() {
     this.gl.viewport(0, 0, canvas.width, canvas.height);
-    this.gl.clearColor(0.35, 0.35, 0.35, 1.0); // Set background to black
+    // this.gl.clearColor(0.35, 0.35, 0.35, 1.0); // Set background to black
     this.gl.enable(this.gl.DEPTH_TEST);
 
     var cBuffer = this.gl.createBuffer();
@@ -927,6 +952,8 @@ class RubiksCube {
 
   render() {
     var modelView = mat4();
+    modelView = mult(modelView, rotate(cameraYrot, [1, 0, 0]));
+    modelView = mult(modelView, rotate(cameraXrot, [0, 1, 0]));
 
     this.gl.uniformMatrix4fv(
       this.gl.getUniformLocation(this.program, "modelViewMatrix"),
