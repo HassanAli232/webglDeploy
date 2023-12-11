@@ -38,6 +38,13 @@ var thetIncrement = 5;
 var currentRotatingDegree = 0;
 var rotateFun;
 
+var isExploding = false;
+var currentOffset = 0;
+const OFFSET = 0.2;
+const OFFSET_INCREMENTER = 0.035;
+var offset_incrementer = -OFFSET_INCREMENTER;
+var offset_acc = -OFFSET_INCREMENTER / 10;
+
 window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
 
@@ -79,21 +86,13 @@ window.onload = function init() {
     }
   });
   // event listeners for keyboards
-  document.addEventListener("keyup", function (event) {
-    var key = event.key.toLowerCase();
 
-    switch (key) {
-      case "shift":
-        direction = 1;
-        break;
-    }
-  });
   document.addEventListener("keydown", function (event) {
     var key = event.key.toLowerCase();
 
     switch (key) {
       case "shift":
-        direction = -1;
+        if (!isRotateing) direction *= -1;
         break;
       case "f":
         console.log("rotate right " + direction);
@@ -171,15 +170,13 @@ window.onload = function init() {
     twist(BACK);
   };
 
-  document.getElementById("browse").onclick = function (event) {
-    var file = event.target.files[0];
-    if (file) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        // Set the loaded image as the background
-        canvas.style.backgroundImage = "url(" + e.target.result + ")";
-      };
-      reader.readAsDataURL(file);
+  document.getElementById("explode").onclick = function () {
+    console.log("explode " + direction);
+
+    if (!isExploding && !isRotateing) {
+      offset_incrementer *= -1;
+      offset_acc *= -1;
+      isExploding = true;
     }
   };
 
@@ -187,7 +184,7 @@ window.onload = function init() {
 };
 
 function twist(num) {
-  if (!isRotateing) {
+  if (!isRotateing && !isExploding) {
     isRotateing = true;
     rotateFun = num;
   }
@@ -256,6 +253,25 @@ function render() {
     }
   }
 
+  if (isExploding) {
+    if (
+      (offset_incrementer > 0 && currentOffset > OFFSET) ||
+      (offset_incrementer < 0 && currentOffset <= 0)
+    ) {
+      isExploding = false;
+      if (offset_incrementer > 0) {
+        offset_incrementer = OFFSET_INCREMENTER;
+      } else {
+        offset_incrementer = -OFFSET_INCREMENTER;
+      }
+    } else {
+      console.log("Incremented");
+      rubiksCube.setDistances(offset_incrementer);
+      currentOffset += offset_incrementer;
+      offset_incrementer += offset_acc;
+    }
+  }
+
   rubiksCube.render();
   gl.drawArrays(gl.TRIANGLES, 0, NumVertices);
   requestAnimFrame(render);
@@ -284,8 +300,7 @@ class RubiksCube {
     var blue = [0.0, 0.0, 1.0, 1.0];
     var green = [0.0, 1.0, 0.0, 1.0];
     var yellow = [1.0, 1.0, 0.0, 1.0];
-    // var magenta = [0.8, 0.0, 0.7, 1.0];
-    var magenta = [0.0, 1.0, 1.0, 1.0];
+    var magenta = [0.8, 0.0, 0.7, 1.0];
     // var orange = [1.0, 0.65, 0.0, 1.0];
     var white = [1.0, 1.0, 1.0, 1.0];
     var black = [0.0, 0.0, 0.0, 1.0];
@@ -488,23 +503,6 @@ class RubiksCube {
     this.recompute();
   }
 
-  setOffset(offset) {
-    for (let i = 0; i < this.rubiksPoints.length; i++) {
-      let point = this.rubiksPoints[i];
-      // Update each coordinate based on the sign and offset
-      point[0] += offset * this.getSign(point[0]);
-      point[1] += offset * this.getSign(point[1]);
-      point[2] += offset * this.getSign(point[2]);
-
-      this.rubiksPoints[i] = point;
-    }
-    this.recompute();
-  }
-
-  getSign(number) {
-    return number > 0 ? 1 : number < 0 ? -1 : 0;
-  }
-
   setSideColors() {
     // whole left part:
     // up, right, bottom, left, front, back
@@ -626,7 +624,7 @@ class RubiksCube {
       this.hidden,
       this.hidden,
       this.hidden,
-      this.frontColor,
+      this.hidden,
       this.backColor
     );
 
@@ -732,6 +730,21 @@ class RubiksCube {
       this.hidden,
       this.backColor
     );
+  }
+
+  setDistances(offset) {
+    let i = 0;
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        for (let z = -1; z <= 1; z++) {
+          if (x == 0 && y == 0 && z == 0) continue;
+          this.cubes[i].setOffset(offset * x, offset * y, offset * z);
+          i++;
+        }
+      }
+    }
+
+    this.recompute();
   }
 
   addAllCubesInfo() {

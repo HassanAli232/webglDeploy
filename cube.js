@@ -32,7 +32,6 @@ class Cube {
     this.backColor = magenta;
 
     this.generateColorCube();
-    // this.initBuffers();
   }
 
   setColors(up, right, bottom, left, front, back) {
@@ -85,15 +84,12 @@ class Cube {
     }
   }
 
-  setOffset(offset) {
+  setOffset(offsetx, offsety, offsetz) {
     for (let i = 0; i < this.points.length; i++) {
-      let point = this.points[i];
       // Update each coordinate based on the sign and offset
-      point[0] += offset * this.getSign(point[0]);
-      point[1] += offset * this.getSign(point[1]);
-      point[2] += offset * this.getSign(point[2]);
-
-      this.points[i] = point;
+      this.points[i][0] += offsetx;
+      this.points[i][1] += offsety;
+      this.points[i][2] += offsetz;
     }
   }
 
