@@ -34,7 +34,12 @@ var x = 0,
 
 var direction = 1;
 var isRotateing = false;
-var thetIncrement = 5;
+
+var isAnimating = true;
+var toggleBack = false;
+const ANIMATION_SPEED = 5;
+
+var thetIncrement = ANIMATION_SPEED;
 var currentRotatingDegree = 0;
 var rotateFun;
 
@@ -44,6 +49,8 @@ const OFFSET = 0.2;
 const OFFSET_INCREMENTER = 0.035;
 var offset_incrementer = -OFFSET_INCREMENTER;
 var offset_acc = -OFFSET_INCREMENTER / 10;
+
+var colorCenter;
 
 window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
@@ -58,6 +65,7 @@ window.onload = function init() {
 
   // cube = new Cube(gl, program, x, y, z, 1);
   rubiksCube = new RubiksCube(gl, program);
+  colorCenter = rubiksCube.getColorCenter();
 
   canvas.addEventListener("mousedown", function (event) {
     dragging = true;
@@ -74,11 +82,31 @@ window.onload = function init() {
       var deltaX = event.clientX - lastMouseX;
       var deltaY = event.clientY - lastMouseY;
 
-      if (cameraYrot - deltaY / 5 < 25 && cameraYrot - deltaY / 5 > -25) {
+      if (cameraYrot - deltaY / 5 <= 90 && cameraYrot - deltaY / 5 >= -90) {
         cameraYrot -= deltaY / 5; // Update x based on vertical mouse movement
+
+        if (cameraYrot >= 89) {
+          twist(ALLUP, false);
+          cameraYrot = 0;
+          toggleBack = true;
+        } else if (cameraYrot <= -89) {
+          twist(ALLDOWN, false);
+          cameraYrot = 0;
+          toggleBack = true;
+        }
       }
-      if (cameraXrot - deltaX / 5 < 25 && cameraXrot - deltaX / 5 > -25) {
+
+      if (cameraXrot - deltaX / 5 <= 90 && cameraXrot - deltaX / 5 >= -90) {
         cameraXrot -= deltaX / 5; // Update y based on horizontal mouse movement
+        if (cameraXrot >= 89) {
+          twist(ALLLEFT, false);
+          cameraXrot = 0;
+          toggleBack = true;
+        } else if (cameraXrot <= -89) {
+          twist(ALLRIGHT, false);
+          cameraXrot = 0;
+          toggleBack = true;
+        }
       }
 
       lastMouseX = event.clientX;
@@ -96,44 +124,44 @@ window.onload = function init() {
         break;
       case "f":
         console.log("rotate right " + direction);
-        twist(FRONT);
+        twist(FRONT, isAnimating);
         break;
       case "u":
         console.log("rotate up " + direction);
-        twist(UP);
+        twist(UP, isAnimating);
         break;
       case "l":
         console.log("rotate left " + direction);
-        twist(LEFT);
+        twist(LEFT, isAnimating);
         break;
       case "r":
         console.log("rotate right " + direction);
-        twist(RIGHT);
+        twist(RIGHT, isAnimating);
         break;
       case "d":
         console.log("rotate down " + direction);
-        twist(DOWN);
+        twist(DOWN, isAnimating);
         break;
       case "b":
         console.log("rotate back " + direction);
-        twist(BACK);
+        twist(BACK, isAnimating);
         break;
       case "arrowup":
         console.log("arrow up");
-        twist(ALLUP);
+        twist(ALLUP, isAnimating);
 
         break;
       case "arrowdown":
         console.log("arrow down");
-        twist(ALLDOWN);
+        twist(ALLDOWN, isAnimating);
         break;
       case "arrowleft":
         console.log("arrow left");
-        twist(ALLLEFT);
+        twist(ALLLEFT, isAnimating);
         break;
       case "arrowright":
         console.log("arrow right");
-        twist(ALLRIGHT);
+        twist(ALLRIGHT, isAnimating);
         break;
     }
   });
@@ -144,32 +172,36 @@ window.onload = function init() {
   };
   document.getElementById("reset").onclick = function () {
     rubiksCube = new RubiksCube(gl, program);
+    colorCenter = rubiksCube.getColorCenter();
   };
   document.getElementById("rotateRight").onclick = function () {
     console.log("roate right " + direction);
-    twist(RIGHT);
+    twist(RIGHT, isAnimating);
   };
   document.getElementById("rotateUp").onclick = function () {
     console.log("roate up " + direction);
-    twist(UP);
+    twist(UP, isAnimating);
   };
   document.getElementById("rotateDown").onclick = function () {
     console.log("roate down " + direction);
-    twist(DOWN);
+    twist(DOWN, isAnimating);
   };
   document.getElementById("rotateLeft").onclick = function () {
     console.log("roate left " + direction);
-    twist(LEFT);
+    twist(LEFT, isAnimating);
   };
   document.getElementById("rotateFront").onclick = function () {
     console.log("roate front " + direction);
-    twist(FRONT);
+    twist(FRONT, isAnimating);
   };
   document.getElementById("rotateBack").onclick = function () {
     console.log("roate back " + direction);
-    twist(BACK);
+    twist(BACK, isAnimating);
   };
-
+  document.getElementById("animation").onclick = function () {
+    console.log("animation " + isAnimating + " to " + !isAnimating);
+    isAnimating = !isAnimating;
+  };
   document.getElementById("explode").onclick = function () {
     console.log("explode " + direction);
 
@@ -183,17 +215,22 @@ window.onload = function init() {
   render();
 };
 
-function twist(num) {
+function twist(num, animation) {
   if (!isRotateing && !isExploding) {
     isRotateing = true;
     rotateFun = num;
+    isAnimating = animation;
   }
 }
 
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // rubiksCube.setTheta(theta);
+  if (!isAnimating) {
+    thetIncrement = 90;
+  } else {
+    thetIncrement = ANIMATION_SPEED;
+  }
 
   if (isRotateing) {
     currentRotatingDegree += thetIncrement;
@@ -251,6 +288,10 @@ function render() {
         rubiksCube.rotateLeft(1, thetIncrement, !isRotateing);
         break;
     }
+    if (toggleBack) {
+      isAnimating = !isAnimating;
+      toggleBack = false;
+    }
   }
 
   if (isExploding) {
@@ -271,6 +312,8 @@ function render() {
       offset_incrementer += offset_acc;
     }
   }
+  document.getElementById("colorCenter").innerText =
+    rubiksCube.getColorCenter();
 
   rubiksCube.render();
   gl.drawArrays(gl.TRIANGLES, 0, NumVertices);
@@ -449,6 +492,27 @@ class RubiksCube {
       );
     }
     this.gl.uniform1i(this.gl.getUniformLocation(this.program, "texture"), 0);
+  }
+
+  getColorCenter() {
+    var i = this.cubes[12].id;
+
+    switch (i) {
+      case 12:
+        return "Green";
+      case 4:
+        return "Magenta";
+      case 10:
+        return "Yellow";
+      case 13:
+        return "Blue";
+      case 15:
+        return "White";
+      case 21:
+        return "Red";
+      default:
+        return "Black";
+    }
   }
 
   isPowerOf2(value) {
