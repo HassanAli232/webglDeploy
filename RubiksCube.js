@@ -417,7 +417,7 @@ class RubiksCube {
 
     var projection = ortho(-1, 1, -1, 1, 100, -100);
 
-    var lightPosition = vec4(0.0, 1.0, 0.0, 0.0);
+    var lightPosition = vec4(-1.0, 1.0, 0.0, 0.0);
     var lightAmbient = vec4(0.5, 0.5, 0.5, 1.0);
     var lightDiffuse = vec4(0.8, 0.8, 0.8, 1.0);
     var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
